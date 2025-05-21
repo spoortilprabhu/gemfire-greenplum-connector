@@ -1,0 +1,81 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>gemfire-gpdb-client</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <properties>
+        <java.version>1.8</java.version> <!-- or 11 -->
+        <!--<gemfire.version>10.1.2</gemfire.version> &lt;!&ndash; -->
+    </properties>
+
+    <dependencies>
+
+
+        <dependency>
+            <groupId>com.vmware.gemfire</groupId>
+            <artifactId>gemfire-core</artifactId>
+            <version>10.1.2</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/gemfire-core-10.1.2.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.vmware.gemfire</groupId>
+            <artifactId>gemfire-management</artifactId>
+            <version>10.1.2</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/gemfire-management-10.1.2.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>io.pivotal.gemfire</groupId>
+            <artifactId>gemfire-greenplum</artifactId>
+            <version>4.0.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/gemfire-greenplum-4.0.1.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>com.vmware.gemfire</groupId>
+            <artifactId>gemfire-logging</artifactId>
+            <version>10.1.2</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/gemfire-logging-10.1.2.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>com.vmware.gemfire</groupId>
+            <artifactId>gemfire-tcp-server</artifactId>
+            <version>10.1.2</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/gemfire-tcp-server-10.1.2.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.vmware.gemfire</groupId>
+            <artifactId>gemfire-serialization</artifactId>
+            <version>10.1.2</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/gemfire-serialization-10.1.2.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>commons-validator</groupId>
+            <artifactId>commons-validator</artifactId>
+            <version>1.7</version>
+        </dependency>
+        <dependency>
+            <groupId>com.vmware.gemfire</groupId>
+            <artifactId>gemfire-membership</artifactId>
+            <version>10.1.2</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/gemfire-membership-10.1.2.jar</systemPath>
+        </dependency>
+
+
+    </dependencies>
+
+</project>
