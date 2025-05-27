@@ -46,7 +46,7 @@
 			<artifactId>gemfire-greenplum</artifactId>
 			<version>4.0.1</version>
 			<scope>system</scope>
-			<systemPath>C:/Users/Administrator/Desktop/GemfireGreenplumConnectorDemo-master/gemfire-server/gemfire-greenplum-4.0.1.jar</systemPath>
+			<systemPath><PATH>/gemfire-server/gemfire-greenplum-4.0.1.jar</systemPath>
 		</dependency>
 		<dependency>
 
@@ -54,7 +54,7 @@
 			<artifactId>Driver</artifactId>
 			<version>9.2</version>
 			<scope>system</scope>
-			<systemPath>C:/Users/Administrator/Desktop/GemfireGreenplumConnectorDemo-master/gemfire-client/postgresql-9.2-1002.jdbc4.jar</systemPath>
+			<systemPath><PATH>/gemfire-client/postgresql-9.2-1002.jdbc4.jar</systemPath>
 		</dependency>
 
 	</dependencies>
