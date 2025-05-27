@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: io.pivotal.gemfire.client.GemfireClientApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.171 sec - in io.pivotal.gemfire.client.GemfireClientApplicationTests

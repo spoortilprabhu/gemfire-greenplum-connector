@@ -1,55 +1,94 @@
+## Demo Overview
 
-# Greenplum to GemFire Region Import Example
+This demo details an environment setup and demonstrates the
+GemFire-Greenplum Connector ability to copy data from GPDB to
+GemFire and from GemFire to GPDB.  If anything the most important file in this project is `GemfireClientApplicationTests.java`.  This is a file under the `gemfire-client` sub project, and this file will run two separate integration tests that interact with a GPDB instancce via JDBC and a Gemfire instance.  The tests will run pre and post assertions to prove out that running functions on the cluster will provide an expexted output.  
 
-This example demonstrates how to integrate VMware GemFire 10.1.2 with a PostgreSQL-compatible Greenplum database and import table data into a GemFire region using the Greenplum Connector(`GpdbService`).
+The demo runs `GPDB` and `GemFire 9.0` within a single `Centos 7` VM.  
 
-Greenplum Table Sample
+On the GemFire side, there is 1 region: `Customer`.  Configuration for the regions is defined in the `cache.xml` file.  The `cache.xml` file is really where all the magic happens.  This is where you will define the mappings between the Gemfire Regions and the GPDB Tables.  
 
-Before starting GemFire, ensure your Greenplum table contains data:
+The mapping is as follows:
 
-postgres=# SELECT * FROM test_small;
-     id     |    value
-------------+-------------
- 2test:keys | testValue_2
+* `Customer` region -> `customer` table
 
 
-GemFire Setup
+## Prerequisites
 
-1. Start the Locator:
-   gfsh> start locator --name=locator1 --bind-address=<IP>  --port=10334
+1. Maven
+
+2. The Gemfire-Greenplum connector jar
+3. Gemfire 9.0
+4. Greenplum 4.x
+
+
+## Setting up the Environment
+1. Lets start by getting Greenplum Setup.  Lets start up GPDB and then run the `setup_gpdb.sql` file to setup our tables and seed some data.
+
+   ```
+   gpstart
+   cd setup_scripts
+   psql -f setup_gpdb.sql
+   ```
    
-2. Configure PDX Serialization:
-   gfsh> configure pdx --read-serialized=true --auto-serializable-classes=io.pivotal.gemfire.demo.entity.*
+2.  The next important step is to start gpfdist in order for Gemfire and GPDB to have a channel to communicate.  (Set a custom port if you want with -p flag!  But default is 8000)
+   ```
+   gpfdist -p 8002
+   ```
+3. So now you have GPDB running, seeded with data, with the external protocol setup.  Lets startup Gemfire.  The Specific scripts I provided create one locator, one server, deploy a jar with the domain objects, and a jar with the functions(gemfire-server).  You're going to need to go into the script and change the absolute path to match where the jars are in your system.  
+   ```
+   . start_gemfire.sh
+   ```
 
-3. Start the Server:
-   gfsh> start server --name=server1 --server-bind-address=<IP> --server-port=40404 --J=-Dgemfire.prometheus.metrics.emission=Default --J=-Dgemfire.prometheus.metrics.port=8002
+4. Verify that GemFire has the correct regions, and functions as defined in the `cache.xml` file.
 
-4. Create JDBC JNDI Binding:
-   gfsh> create jndi-binding --name=datasource --type=SIMPLE --jdbc-driver-class="org.postgresql.Driver" --username="<username>" --password="<password>" --connection-url="jdbc:postgresql://<Greenplum-IP>:5432/postgres?sslmode=disable"
+    ```
+    gfsh>list regions
+    List of regions
+    ---------------
+     Customer
+    
+    gfsh>list functions
+    Member | Function
+    ------ | -------------------------------
+    s1     | ClearRegionRemoveAllFunction
+    s1     | ImportFromGPDBToGemfireFunction
+    s1     | ImportFromGemfireToGPDBFunction
 
-5. Enable gpfdist Protocol:
-   gfsh> configure gpfdist-protocol --port=8000
+    ```
+   
+## Running Operations from GFSH
 
-6. Create a Region:
-   gfsh> create region --name=/testRegion --type=PARTITION
- 
-7. Map Region to Greenplum Table:
-   gfsh> create gpdb-mapping --region=/testRegion --data-source=datasource --pdx-name="testRegion" --table=test_small --id=id,value
+  1. You should now have a running singlenode Gemfire instance, and now we're ready to import some data from GPDB into Gemfire.  From gfsh
+      ```
+      gfsh> connect
+      gfsh> import gpdb --region=/Customer
+       ```
+5. You should see a successful import message showing how many objects you imported.  
 
-## Objective
+## Running The Operations Programmatically
+As we all know, GFSH is just a client application itself, so what it's actually doing is triggering operations that happen on the server.  In a production enviornment we're probably going to want to know how to trigger the imports and exports via a function.
 
-The goal is to import data from Greenplum into a GemFire region using the Greenplum Connector API:
+Lets check out the first function `ImportFromGemfireToGPDBFunction.java` it does one important thing
+```
+Region<?,?> region = cache.getRegion("Customer");
+long numberOfResults = GpdbService.createOperation(region).exportRegion();
+String result = "Successfully imported this many records : " + numberOfResults;
+```
+1. So what we need to is to deploy this function onto the server so you can run it yourself!  Lets start by building the package from the root, this will build the gemfire-server package with the functions and the domain package with the Domain Objects.
 
-### Java Code Example
-ImportConfiguration configuration = ImportConfiguration.builder("/testRegion").build();
-ImportResult importResult = GpdbService.importRegion(configuration);
 
-// Get the total number of Greenplum rows imported into the GemFire region.
-int importCount = importResult.getImportedCount();
-System.out.println("Imported rows: " + importCount);
+```
+      mvn clean install
+```
 
-To hook into the import lifecycle, implement the `OperationEventListener` interface to receive callbacks at key points during the import.
-
-## Result
-
-Once GpdbService.importRegion() is invoked, the data from the `test_small` Greenplum table will be imported into the `/testRegion` GemFire region.
+2.  This will build the objects you need to run the integration tests of the client, now start gemfire with new newly built jars.
+   ```
+   . start_gemfire.sh
+   ```
+3. You'll have everything you need deployed and now you can run the tests in Gemfire Client
+   ```
+   cd gemfire-client
+   mvn test
+   ```
+4. This command will run the integration tests in `GemfireClientApplicationTests` that will prove the functionality of the gemfire greenplum connector.  

@@ -1,0 +1,14 @@
+<region name="Customer">
+    <region-attributes refid="PARTITION" />
+    <gpdb:jdbc-mapping
+            xmlns:gpdb="http://www.vmware.com/schema/gemfire/gpdb"
+            data-source="testdatasource"
+            table="gp_test"
+            pdx-name="io.pivotal.demo.entity.Customer">
+        <gpdb:fields>
+            <gpdb:field name="id" column="id"/>
+            <gpdb:field name="name" column="name"/>
+            <gpdb:field name="income" column="income"/>
+        </gpdb:fields>
+    </gpdb:jdbc-mapping>
+</region>

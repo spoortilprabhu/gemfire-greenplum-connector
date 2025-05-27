@@ -1,0 +1,4 @@
+io\pivotal\gemfire\client\GpdbBulkInsert.class
+io\pivotal\demo\entity\Customer.class
+io\pivotal\demo\entity\TestRegion.class
+io\pivotal\gemfire\client\GemfireClientApplication.class
