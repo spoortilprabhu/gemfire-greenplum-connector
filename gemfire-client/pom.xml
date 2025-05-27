@@ -70,7 +70,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<mainClass>io.pivotal.gemfire.client.GemfireClientApplication</mainClass> <!-- or whichever is correct -->
+					<mainClass>io.pivotal.gemfire.client.GemfireClientApplication</mainClass> 
 				</configuration>
 			</plugin>
 
