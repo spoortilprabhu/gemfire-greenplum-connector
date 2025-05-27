@@ -3,7 +3,7 @@
 This demo details an environment setup and demonstrates the
 GemFire-Greenplum Connector ability to copy data from GPDB to GemFire.  If anything the most important file in this project is `GemfireClientApplicationTests.java`.  This is a file under the `gemfire-client` sub project, and this file will run two separate integration tests that interact with a GPDB instancce via JDBC and a Gemfire instance.  The tests will run pre and post assertions to prove out that running functions on the cluster will provide an expexted output.  
 
-The demo runs `GPDB` and `GemFire 9.0` within a single `Ubuntu` VM.  
+The demo runs `GPDB` and `GemFire 10.1.2` within a single `Ubuntu` VM.  
 The mapping is as follows:
 
 * `Customer` region -> `customer` table
@@ -12,7 +12,7 @@ The mapping is as follows:
 
 1. Maven
 2. The Gemfire-Greenplum connector jar
-3. Gemfire 10
+3. Gemfire 10.1.2
 4. Greenplum 4.x
 
 
