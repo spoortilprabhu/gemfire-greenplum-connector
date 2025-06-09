@@ -14,99 +14,132 @@ import java.sql.Statement;
 import java.util.List;
 
 public class GemfireClientApplication {
-
-	private static ClientCache cache;
-
-	static {
-		ClientCacheFactory ccf = new ClientCacheFactory();
-		ccf.set("cache-xml-file", "clientCache.xml");
-		cache = ccf.create();
-	}
-
 	public static void main(String[] args) {
-		runIntegrationTest();
-	}
 
-	public static void runIntegrationTest() {
-		System.out.println("=== Step 1: Import from Greenplum to GemFire ===");
-		executeImportFromGPDBToGemfire();
+		// Create GemFire client cache using clientCache.xml
+		ClientCache cache = new ClientCacheFactory()
+				.set("cache-xml-file", "clientCache.xml")
+				.create();
 
-		System.out.println("=== Step 2: Fetch ALL from GemFire (Customer Region) ===");
-		Region<String, Customer> region = cache.getRegion("Customer");
+		// region name
+		String regionName = "/Customer";
+		Region<Object, Object> region = cache.getRegion(regionName);
+		try {
 
-		if (region == null) {
-			System.err.println("Region 'Customer' not found!");
-			return;
-		}
+			// Export data from GemFire region to Greenplum
+			ExportConfiguration exportConfig = ExportConfiguration.builder(region).build();
+			ExportResult exportResult = executeExport(exportConfig);
+			System.out.println("Exported rows count: " + safeGetCount(exportResult, "exportedCount"));
 
-		for (Object key : region.keySetOnServer()) {
-			Customer customer = region.get(key);
-			System.out.println("Key: " + key + ", Customer: " + customer);
-		}
+			// Import data from Greenplum into GemFire region
+			ImportConfiguration importConfig = ImportConfiguration.builder(region).build();
+			ImportResult importResult = executeImport(importConfig);
+			System.out.println("Imported rows count: " + safeGetCount(importResult, "importedCount"));
 
-		System.out.println("=== Step 3: Put into GemFire ===");
-		Customer newCustomer = new Customer();
-		newCustomer.setId("id501");
-		newCustomer.setName("Imported From Java");
-		newCustomer.setIncome(99999);
-		region.put("id501", newCustomer);
-		System.out.println("Put into GemFire: " + newCustomer);
-	}
+		} catch (OperationException e) {
 
-	private static void executeImportFromGemfireToGPDB() {
-		Region<?, ?> region = cache.getRegion("Customer");
-		ResultCollector<?, ?> rc = FunctionService.onRegion(region)
-				.execute("ImportFromGemfireToGPDBFunction");
-		Object result = rc.getResult();
-		System.out.println("ImportFromGemfireToGPDBFunction Result: " + result);
-	}
-
-	private static void executeImportFromGPDBToGemfire() {
-		Region<?, ?> region = cache.getRegion("Customer");
-		ResultCollector<?, ?> rc = FunctionService.onRegion(region)
-				.execute("ImportFromGPDBToGemfireFunction");
-		Object result = rc.getResult();
-		if (!(result instanceof List<?>)) {
-			throw new IllegalStateException("Expected result to be a List");
-		}
-		System.out.println("ImportFromGPDBToGemfireFunction Result: " + result);
-	}
-
-	private static void insertIntoGreenplum(String id, String name, int income) {
-		String sql = "INSERT INTO gp_test(id, name, income) VALUES ('" + id + "', '" + name + "', " + income + ");";
-		executeSQL(sql);
-	}
-
-	private static void queryGreenplum(String id) {
-		String sql = "SELECT * FROM gp_test WHERE id='" + id + "';";
-		try (Connection c = DriverManager.getConnection(
-				"jdbc:postgresql://192.168.100.77:5432/postgres", "gpadmin", "deleteme123!");
-			 Statement stmt = c.createStatement();
-			 ResultSet rs = stmt.executeQuery(sql)) {
-
-			while (rs.next()) {
-				System.out.println("Greenplum -> ID: " + rs.getString("id")
-						+ ", Name: " + rs.getString("name")
-						+ ", Income: " + rs.getInt("income"));
-			}
-
-		} catch (Exception e) {
-			System.err.println("Error querying Greenplum: " + e.getMessage());
+			System.err.println("Operation failed: " + e.getMessage());
 			e.printStackTrace();
+
+		} finally {
+			cache.close();
 		}
 	}
 
-	private static void executeSQL(String sql) {
-		try (Connection c = DriverManager.getConnection(
-				"jdbc:postgresql://192.168.100.77:5432/postgres", "gpadmin", "deleteme123!");
-			 Statement stmt = c.createStatement()) {
+	/**
 
-			stmt.executeUpdate(sql);
-			System.out.println("Executed SQL: " + sql);
+	 * Execute the export operation by invoking the ExportOperationFunction directly.
 
+	 */
+
+	private static ExportResult executeExport(ExportConfiguration exportConfig) throws OperationException {
+
+		try {
+			Execution execution = getExecutionForRegion(exportConfig.getRegionPath());
+			@SuppressWarnings("unchecked")
+			ResultCollector<Object, List<Object>> results = (ResultCollector<Object, List<Object>>) execution
+					.withArgs(OperationFunctionArguments.export(exportConfig))
+					.execute(ExportOperationFunction.ID);
+			return ResultCollectorReducers.extractExportResult(results);
+
+		} catch (FunctionException e) {
+			throw buildOperationException(e);
+		}
+	}
+	/**
+	 * Execute the import operation by invoking the ImportOperationFunction directly.
+	 */
+	private static ImportResult executeImport(ImportConfiguration importConfig) throws OperationException {
+		try {
+			Execution execution = getExecutionForRegion(importConfig.getRegionPath());
+			@SuppressWarnings("unchecked")
+			ResultCollector<Object, List<Object>> results = (ResultCollector<Object, List<Object>>) execution
+					.withArgs(OperationFunctionArguments.import_(importConfig))
+					.execute(ImportOperationFunction.ID);
+			return ResultCollectorReducers.extractImportResult(results);
+		} catch (FunctionException e) {
+			throw buildOperationException(e);
+		}
+	}
+
+	/**
+	 * Helper method to get Execution object to invoke function on a single server member.
+	 * If running in client mode, targets the region with a filter of a singleton to ensure single execution.
+	 */
+
+	private static Execution getExecutionForRegion(String regionPath) {
+
+		// Use internal GemFireCacheImpl to detect client or server mode
+		if (GemFireCacheImpl.getInstance().isClient()) {
+			Region region = GemFireCacheImpl.getInstance().getRegion(regionPath);
+			Set<Integer> filter = Collections.singleton(0); // target a single member to avoid duplicates
+			return FunctionService.onRegion(region).withFilter(filter);
+		} else {
+			return FunctionService.onMember(GemFireCacheImpl.getInstance().getDistributedSystem().getDistributedMember());
+		}
+	}
+
+	/**
+	 * Wrap FunctionException as OperationException for uniform error handling.
+	 */
+
+	private static OperationException buildOperationException(FunctionException e) {
+		Throwable cause = e.getCause();
+		if (cause == null) {
+			return new OperationException(e);
+		}
+
+		if (cause instanceof OperationException) {
+			return (OperationException) cause;
+		}
+		return new OperationException(cause);
+	}
+
+
+
+	private static Integer safeGetCount(Object result, String fieldName) {
+		try {
+			java.lang.reflect.Field field = result.getClass().getDeclaredField(fieldName);
+			field.setAccessible(true);
+			return (Integer) field.get(result);
 		} catch (Exception e) {
-			System.err.println("Error executing SQL: " + e.getMessage());
-			e.printStackTrace();
+			return null;
+		}
+	}
+
+
+
+	// Inner helper class to build arguments OperationFunction.arguments(factory, config)
+
+	private static class OperationFunctionArguments {
+		static Object export(ExportConfiguration exportConfig) {
+			return new Object[] { new ExportOperationFactory(), exportConfig };
+		}
+
+
+
+		static Object import_(ImportConfiguration importConfig) {
+			return new Object[] { new ImportOperationFactory(), importConfig };
 		}
 	}
 }

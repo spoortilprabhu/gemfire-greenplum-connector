@@ -31,7 +31,13 @@
 			<artifactId>httpclient</artifactId>
 			<version>4.5.2</version>
 		</dependency>
-
+		<dependency>
+			<groupId>io.pivotal.gemfire</groupId>
+			<artifactId>gemfire-greenplum</artifactId>
+			<version>4.0.1</version>
+			<scope>system</scope>
+			<systemPath>C:/Users/Administrator/Desktop/GemfireGreenplumConnectorDemo/gemfire-server/gemfire-greenplum-4.0.1.jar</systemPath>
+		</dependency>
 		<dependency>
 			<groupId>io.pivotal.demo</groupId>
 			<artifactId>domain</artifactId>
@@ -49,7 +55,6 @@
 			<artifactId>gemfire-core</artifactId>
 			<version>10.1.2</version>
 		</dependency>
-
 
 		<dependency>
 			<groupId>org.postgresql</groupId>
@@ -70,7 +75,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
-					<mainClass>io.pivotal.gemfire.client.GemfireClientApplication</mainClass> 
+					<mainClass>io.pivotal.gemfire.client.GemfireClientApplication</mainClass> <!-- or whichever is correct -->
 				</configuration>
 			</plugin>
 

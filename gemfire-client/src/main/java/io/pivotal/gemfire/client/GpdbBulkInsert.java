@@ -24,6 +24,8 @@ public class GpdbBulkInsert {
         stmt.close();
         conn.close();
 
+        GemfireClientApplication clientApp = new GemfireClientApplication();
+
         System.out.println("Inserted 500 rows into gp_test");
     }
 }
