@@ -28,7 +28,7 @@ int importCount =  importResult.getImportedCount();
 
 So what we need to is to deploy this function onto the server so you can run it yourself!  Lets start by building the package from the root, this will build the gemfire-server package with the functions and the domain package with the Domain Objects.
 ```
-      mvn clean install
+mvn clean install
 ```
 
 You'll have everything you need deployed and now you can run the tests in Gemfire Client
