@@ -26,14 +26,14 @@ ImportResult importResult = GpdbService.importRegion(configuration);
 int importCount =  importResult.getImportedCount();
 ```
 
-	1.	So what we need to is to deploy this function onto the server so you can run it yourself!  Lets start by building the package from the root, this will build the gemfire-server package with the functions and the domain package with the Domain Objects.
+So what we need to is to deploy this function onto the server so you can run it yourself!  Lets start by building the package from the root, this will build the gemfire-server package with the functions and the domain package with the Domain Objects.
 ```
       mvn clean install
 ```
 
-	2.	You'll have everything you need deployed and now you can run the tests in Gemfire Client
+You'll have everything you need deployed and now you can run the tests in Gemfire Client
    ```
    cd gemfire-client
    mvn test
    ```
-	4.	This command will run the integration tests in `GemfireClientApplicationTests` that will prove the functionality of the gemfire greenplum connector.  
+This command will run the integration tests in `GemfireClientApplicationTests` that will prove the functionality of the gemfire greenplum connector.  
